@@ -1,1 +1,1 @@
-# SemanticCachinng
+# SemanticCaching
