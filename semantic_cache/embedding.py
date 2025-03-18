@@ -25,7 +25,7 @@ def generate_embedding(query: str) -> np.ndarray:
         try:
             if model is None:
                 raise RuntimeError("Embedding model unavailable.")
-            embedding = model.encode(query)
+            embedding = model.encode(query, batch_size=1,show_progress_bar=False, num_workers=0)
             norm = np.linalg.norm(embedding) or 1.0
             normalized_embedding = embedding / norm
             return normalized_embedding.astype('float32')
