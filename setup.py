@@ -10,6 +10,7 @@ setup(
         'faiss-cpu',
         'numpy',
         'sentence-transformers',
+        'pytest'
     ],
     author='Subhagato Adak',
     author_email='subhagatoadak.india@gmail.com',
