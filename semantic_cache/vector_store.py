@@ -4,6 +4,7 @@ import faiss
 import logging
 import gc
 from typing import Any, List, Tuple
+from multiprocessing.managers import ListProxy  # Correct import for type annotation
 from semantic_cache import config
 
 logger = logging.getLogger(__name__)
@@ -11,12 +12,11 @@ logger = logging.getLogger(__name__)
 class VectorStore:
     """
     VectorStore wraps FAISS to support adding, searching, deleting, and resetting vectors.
-    To avoid segmentation faults caused by FAISS's C++ internals, operations are run in
-    separate subprocesses with a configurable timeout.
+    Operations are executed in subprocesses to isolate the FAISS C++ backend and avoid segmentation faults.
     """
     def __init__(self) -> None:
         self.dim: int = config.VECTOR_DIM
-        # Use Inner Product search for stability
+        # Use Inner Product (IP) for stability
         self.base_index = faiss.IndexFlatIP(self.dim)
         self.index = faiss.IndexIDMap(self.base_index)
         self.key_to_id: dict[str, int] = {}
@@ -26,12 +26,7 @@ class VectorStore:
 
     def _run_faiss_task(self, method_name: str, *args: Any, timeout: int = 10) -> None:
         """
-        Run a FAISS operation in a separate subprocess to avoid segmentation faults.
-
-        Args:
-            method_name (str): The name of the method to run.
-            *args: Arguments to pass to that method.
-            timeout (int): Maximum time in seconds to wait for the subprocess.
+        Run a FAISS operation in a subprocess with a timeout.
         """
         process = multiprocessing.Process(target=getattr(self, method_name), args=args)
         process.start()
@@ -45,11 +40,7 @@ class VectorStore:
 
     def add_vector(self, key: str, vector: np.ndarray) -> None:
         """
-        Add a vector with a unique ID to FAISS.
-
-        Args:
-            key (str): The unique key associated with the vector.
-            vector (np.ndarray): A 1D array of shape (self.dim,).
+        Add a new vector with a unique ID to FAISS.
         """
         if vector.shape[0] != self.dim:
             raise ValueError(f"Vector dimension mismatch: Expected {self.dim}, got {vector.shape[0]}")
@@ -65,17 +56,19 @@ class VectorStore:
             logger.error(f"Error adding vector for key {key}: {e}")
 
     def add(self, key: str, vector: np.ndarray) -> None:
-        """Run the add_vector operation in a subprocess."""
+        """
+        Run the add_vector operation in a subprocess.
+        """
         self._run_faiss_task("add_vector", key, vector)
 
-    def search_vectors(self, vector: np.ndarray, top_k: int, results: multiprocessing.managers.ListProxy) -> None:
+    def search_vectors(self, vector: np.ndarray, top_k: int, results: ListProxy) -> None:
         """
-        Search for the most similar vector(s) in FAISS and store results in the shared list.
-
+        Search for the most similar vectors in FAISS and append results to the shared list.
+        
         Args:
-            vector (np.ndarray): Query vector of shape (self.dim,).
-            top_k (int): Number of top results to retrieve.
-            results: A shared list to append tuples (key, distance).
+            vector (np.ndarray): The query vector.
+            top_k (int): The number of top results to retrieve.
+            results (ListProxy): A shared list to store (key, distance) tuples.
         """
         if vector.shape[0] != self.dim:
             raise ValueError(f"Vector dimension mismatch: Expected {self.dim}, got {vector.shape[0]}")
@@ -91,17 +84,10 @@ class VectorStore:
 
     def search(self, vector: np.ndarray, top_k: int = 1) -> List[Tuple[str, float]]:
         """
-        Run the search_vectors operation in a subprocess and return the results.
-
-        Args:
-            vector (np.ndarray): Query vector.
-            top_k (int): Number of results to retrieve.
-
-        Returns:
-            List[Tuple[str, float]]: List of tuples containing (key, distance).
+        Run the FAISS search operation in a subprocess and return the results.
         """
         manager = multiprocessing.Manager()
-        results = manager.list()
+        results: ListProxy = manager.list()
         process = multiprocessing.Process(target=self.search_vectors, args=(vector, top_k, results))
         process.start()
         process.join(10)
@@ -114,9 +100,6 @@ class VectorStore:
     def delete_vector(self, key: str) -> None:
         """
         Delete the vector corresponding to the provided key from FAISS.
-
-        Args:
-            key (str): The key of the vector to delete.
         """
         if key not in self.key_to_id:
             logger.warning(f"Key {key} not found in FAISS index.")
@@ -132,11 +115,15 @@ class VectorStore:
             logger.error(f"Error deleting vector for key {key}: {e}")
 
     def delete(self, key: str) -> None:
-        """Run the delete_vector operation in a subprocess."""
+        """
+        Run the delete_vector operation in a subprocess.
+        """
         self._run_faiss_task("delete_vector", key)
 
     def reset_index_process(self) -> None:
-        """Internal method to reset the FAISS index. To be run in a subprocess."""
+        """
+        Internal method to reset the FAISS index; to be run in a subprocess.
+        """
         self.base_index = faiss.IndexFlatIP(self.dim)
         self.index = faiss.IndexIDMap(self.base_index)
         self.key_to_id.clear()
@@ -146,5 +133,7 @@ class VectorStore:
         logger.info("FAISS index has been reset.")
 
     def reset_index(self) -> None:
-        """Run the reset_index_process operation in a subprocess."""
+        """
+        Run the reset_index_process operation in a subprocess.
+        """
         self._run_faiss_task("reset_index_process")
