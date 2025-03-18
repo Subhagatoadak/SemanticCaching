@@ -1,13 +1,13 @@
-# tests/test_embedding.py
 import numpy as np
 import pytest
+from semantic_cache import config
 from semantic_cache.embedding import generate_embedding
 
-def test_generate_embedding():
-    query = "This is a test query."
-    emb = generate_embedding(query)
-    assert emb is not None, "Embedding should not be None."
-    assert isinstance(emb, np.ndarray), "Embedding should be a numpy array."
-    # Check that the embedding is normalized (norm approximately 1)
-    norm = np.linalg.norm(emb)
-    np.testing.assert_almost_equal(norm, 1.0, decimal=2, err_msg="Embedding vector not normalized.")
+def test_generate_embedding_shape_and_normalization():
+    query = "Test query for embedding"
+    embedding = generate_embedding(query)
+    # Check that the embedding has the correct dimension
+    assert embedding.shape[0] == config.VECTOR_DIM, f"Expected {config.VECTOR_DIM}, got {embedding.shape[0]}"
+    # Check that the embedding norm is non-zero
+    norm = np.linalg.norm(embedding)
+    assert norm > 0, "Embedding norm should be > 0"

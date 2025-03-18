@@ -1,4 +1,3 @@
-# tests/test_persistent_cache.py
 import pytest
 from semantic_cache.persistent_cache import PersistentCache
 
@@ -7,11 +6,11 @@ def test_persistent_cache_set_get_delete():
     key = "test_key"
     value = {"data": "test_value"}
     
-    # Set a value
+    # Set a value in persistent cache
     cache.set(key, value)
     result = cache.get(key)
-    assert result == value, "Persistent cache should return the value that was set."
+    assert result == value, "PersistentCache: Retrieved value should match the stored value."
     
-    # Delete the value and verify it's gone
+    # Delete the key and verify deletion
     cache.delete(key)
-    assert cache.get(key) is None, "Persistent cache should return None for a deleted key."
+    assert cache.get(key) is None, "PersistentCache: Value should be None after deletion."

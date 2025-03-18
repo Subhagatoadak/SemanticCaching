@@ -64,3 +64,6 @@ class SessionCache:
             if key in self.cache:
                 del self.cache[key]
                 logger.info(f"SessionCache: Deleted key {key}")
+    
+    def get_metrics(self):
+        return {"hits": self.hits, "misses": self.misses}
