@@ -11,7 +11,8 @@ setup(
         'faiss-cpu',
         'numpy',
         'sentence-transformers',
-        'pytest'
+        'pytest',
+        'fakeredis'
     ],
     author='Subhagato Adak',
     author_email='subhagatoadak.india@gmail.com',
