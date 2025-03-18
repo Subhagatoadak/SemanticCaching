@@ -7,7 +7,7 @@ def create_random_vector(dim):
     return np.random.rand(dim).astype("float32")
 
 def test_vector_store_add_search_delete():
-    vs = VectorStore()
+    vs = VectorStore(use_subprocess=False)
     key = "test_key"
     vector = create_random_vector(config.VECTOR_DIM)
     
@@ -24,7 +24,7 @@ def test_vector_store_add_search_delete():
     assert len(results_after_delete) == 0, "VectorStore: No results should be found after deletion."
 
 def test_vector_store_reset_index():
-    vs = VectorStore()
+    vs = VectorStore(use_subprocess=False)
     key = "test_key"
     vector = create_random_vector(config.VECTOR_DIM)
     vs.add(key, vector)
