@@ -1,0 +1,15 @@
+name: semantic_cache_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - redis
+  - faiss-cpu
+  - pip
+  - pip:
+      - sentence-transformers
+      - flake8
+      - pytest
+      - fakeredis
+     
