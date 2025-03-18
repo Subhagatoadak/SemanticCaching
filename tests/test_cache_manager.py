@@ -10,7 +10,7 @@ def test_cache_manager_set_get_invalidate():
     persistent_cache = PersistentCache()
     session_cache = SessionCache()
     # Use an embedding dimension that matches your embedding service (default 768 for SentenceTransformers)
-    vector_store = VectorStore(dim=768)
+    vector_store = VectorStore()
     cache_manager = CacheManager(persistent_cache, session_cache, vector_store)
     
     query = "test query"
